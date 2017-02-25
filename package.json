@@ -1,0 +1,30 @@
+{
+  "name": "fishlogin",
+  "version": "1.0.0",
+  "description": "A login system for https://github.com/UncleJerry/Dailylife-with-a-fish",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.16.1",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.14.1",
+    "express-flash-2": "^1.0.1",
+    "express-session": "^1.15.1",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0",
+    "pg": "^6.1.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UncleJerry/Fish-login.git"
+  },
+  "author": "Jerry Chou",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/UncleJerry/Fish-login/issues"
+  },
+  "homepage": "https://github.com/UncleJerry/Fish-login#readme"
+}
