@@ -4,7 +4,8 @@ var userAuth = require('./userAuth');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
-
+var https = require('https');
+var fs = require('fs');
 
 app.use(express.static('public'));
 app.use(cookieParser());
@@ -36,6 +37,10 @@ app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
-app.listen(3000, function() {
-  console.log('Listening on 3000');
+var secureServer = https.createServer({
+    key: fs.readFileSync('keys/private.key'),
+    cert: fs.readFileSync('keys/certificate.pem')
+  }, app);
+secureServer.listen(3000, function(){
+  console.log('Established the https server at port 3000');
 });
