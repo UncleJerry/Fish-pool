@@ -25,7 +25,7 @@ function queryInfo(username, callback) {
       return callback(err, null);
     }
 
-    client.query('SELECT hashpass, salt FROM Account WHERE uname = $1', [username], function(err, result){
+    client.query('SELECT hashpass, salt, uid FROM Account WHERE uname = $1', [username], function(err, result){
       done(err);
       return callback(null, result);
       if(err) {
