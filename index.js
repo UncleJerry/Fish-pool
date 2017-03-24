@@ -7,6 +7,7 @@ var https = require('https');
 var fs = require('fs');
 var hash = require('./hash');
 var query = require('./query');
+var create = require('./createUser');
 
 app.use(express.static('public'));
 //app.use(cookieParser()); temporary disable
@@ -33,7 +34,7 @@ app.post('/login.html', function (req, res){
         const hashpass = hash.hashWithSalt(password, result.rows[0].salt);
         if (hashpass.localeCompare(result.rows[0].hashpass) == 0) {
           req.session.user = result.rows[0].uid;// To mark the user id to further action.
-          res.redirect('/verify');
+          res.sendStatus(200);
         }else{
           // if the hashed password not match, return false
           res.redirect(401, '/');
@@ -48,13 +49,25 @@ app.post('/login.html', function (req, res){
 
 });
 
+
+app.post('/signup', function(req, res){
+  // Get the username and passwd from request.
+  const username = req.body['username'];
+  const password = req.body['password'];
+
+  const newUserID = create.newUser(username, password);
+
+});
+
+
+
 /**
  * Verify the login session.
  * If the device never login or the session is expired, redirect to the login page
  */
 app.get('/verify', function (req, res){
   if (req.session && req.session.user) {
-
+    res.sendStatus(200);
   }else{
     res.redirect(401, '/login.html');
   }

@@ -31,6 +31,10 @@ function queryInfo(username, callback) {
       if(err) {
         return callback(err, null);
       }
+
+      client.end(function (err) {
+        if (err) throw err;
+      });
     });
   })
 }
