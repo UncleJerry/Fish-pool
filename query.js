@@ -9,6 +9,7 @@ var pg = require('pg');
  * @param {string} callback - callback
  */
 function queryInfo(username, callback) {
+
   const config = {
     //user: '',
     //database: '',
@@ -27,10 +28,12 @@ function queryInfo(username, callback) {
 
     client.query('SELECT hashpass, salt, uid FROM Account WHERE uname = $1', [username], function(err, result){
       done(err);
-      return callback(null, result);
+      
       if(err) {
         return callback(err, null);
       }
+
+      return callback(null, result);
 
       client.end(function (err) {
         if (err) throw err;

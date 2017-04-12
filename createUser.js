@@ -2,41 +2,41 @@ var pg = require('pg');
 var hash = require('./hash');
 
 
-
-var newUser = function(username, password){
+function newUser(username, password, callback) {
   const hashedData = hash.hashItAll(password);
 
-  // Config of PostgreSQL
-  var client = new pg.Client({
+
+  const config = {
     //user: '',
     //database: '',
     //password: '',
-    //host: '',
-    //port:
-  });
+    //host: 'localhost',
+    //port: 5432,
+    //max: 10,
+    //idleTimeoutMillis: 1000,
+  };
 
-  // connect to our database
-  client.connect(function (err, client, done) {
-    if (err) throw err;
+  var pool = new pg.Pool(config);
+  pool.connect(function(err, client, done){
+    if(err) {
+      return callback(err, null);
+    }
 
-    // execute a query on our database
-    client.query('INSERT account (uname, hashpass, salt) VALUES ($1, $2, $3); SELECT uid FROM account WHERE username = $4;', [username, hashedData.hashpass, hashedData.salt, username], function (err, result) {
-      if (err) throw err;
+    client.query('INSERT INTO account (uname, hashpass, salt) VALUES ($1, $2, $3) RETURNING uid;', [username, hashedData.hashpass, hashedData.salt], function(err, result){
       done(err);
-
-      return result.rows[0].uid;
-      // disconnect the client
+      
+      if(err) {
+        return callback(err, null);
+      }
+      return callback(null, result);
       client.end(function (err) {
         if (err) throw err;
       });
     });
-
-  });
-
+  })
 }
 
 
 
 
-
-export.newUser = newUser;
+exports.newUser = newUser;

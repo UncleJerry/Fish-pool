@@ -16,8 +16,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Set a month life to Session
 app.use(session({secret: 'suggest to have a random secret', cookie: {maxAge: 43200000}, resave: true, saveUninitialized: true}));
 
-
-app.post('/login.html', function (req, res){
+/**
+ * Login page.
+ */
+app.post('/login', function (req, res){
 
   // Get the username and passwd from request.
   const username = req.body['username'];
@@ -29,7 +31,7 @@ app.post('/login.html', function (req, res){
 
       if (result.rows[0] == undefined) {
         // if the user isn't exist return false
-        res.redirect(401, '/');
+        res.sendStatus(401);
       }else{
         const hashpass = hash.hashWithSalt(password, result.rows[0].salt);
         if (hashpass.localeCompare(result.rows[0].hashpass) == 0) {
@@ -37,7 +39,7 @@ app.post('/login.html', function (req, res){
           res.sendStatus(200);
         }else{
           // if the hashed password not match, return false
-          res.redirect(401, '/');
+          res.sendStatus(401);
         }
       }
 
@@ -49,16 +51,31 @@ app.post('/login.html', function (req, res){
 
 });
 
-
+/**
+ * Sign up page
+ * If the device never login or the session is expired, redirect to the login page
+ */
 app.post('/signup', function(req, res){
   // Get the username and passwd from request.
   const username = req.body['username'];
   const password = req.body['password'];
 
-  const newUserID = create.newUser(username, password);
-
+  create.newUser(username, password, function(err, result){
+    if (!err) {
+      req.session.user = result.rows[0].uid;
+      res.sendStatus(200);
+    }else{
+      console.log(err);
+      res.sendStatus(401);
+    }
+  });
+  
+  
 });
 
+app.post('/signup/userinfo', function(req, res){
+  
+});
 
 
 /**
@@ -79,6 +96,6 @@ var secureServer = https.createServer({
     cert: fs.readFileSync('keys/certificate.pem')
 }, app);
 
-secureServer.listen(3000, function(){
-  console.log('Established the https server at port 3000');
+secureServer.listen(3223, function(){
+  console.log('Established the https server at port 3223');
 });
