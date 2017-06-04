@@ -62,6 +62,31 @@ function addUserInfo(uid, firstname, lastname, gender, callback) {
   })
 }
 
+function addMatch(boyid, girlid, theday, callback) {
+  const hashedData = hash.hashItAll(password);
+
+  var pool = new pg.Pool(config);
+  pool.connect(function(err, client, done){
+    if(err) {
+      return callback(err, null);
+    }
+
+    client.query('INSERT INTO account (boyid, girlid, theday) VALUES ($1, $2, $3);', [boyid, girlid, theday], function(err, result){
+      done(err);
+      
+      if(err) {
+        return callback(err, null);
+      }
+
+      return callback(null, result);
+      
+      client.end(function (err) {
+        if (err) throw err;
+      });
+    });
+  })
+}
 
 exports.newUser = newUser;
 exports.addUserInfo = addUserInfo;
+exports.addMatch = addMatch;

@@ -49,7 +49,30 @@ function queryName(uid, callback){
       return callback(err, null);
     }
 
-    client.query('SELECT uid, ifirstname, lastname FROM userinfo as info WHERE uid = $1;', [username], function(err, result){
+    client.query('SELECT uid, ifirstname, lastname FROM userinfo WHERE uid = $1;', [username], function(err, result){
+      done(err);
+      
+      if(err) {
+        return callback(err, null);
+      }
+
+      return callback(null, result);
+
+      client.end(function (err) {
+        if (err) throw err;
+      });
+    });
+  })
+}
+
+function queryUIDwithUname(username, callback){
+  var pool = new pg.Pool(config);
+  pool.connect(function(err, client, done){
+    if(err) {
+      return callback(err, null);
+    }
+
+    client.query('SELECT uid FROM userinfo WHERE uname = $1;', [username], function(err, result){
       done(err);
       
       if(err) {
@@ -66,3 +89,5 @@ function queryName(uid, callback){
 }
 
 exports.queryInfo = queryInfo;
+exports.queryName = queryName;
+exports.queryUIDwithUname = queryUIDwithUname;

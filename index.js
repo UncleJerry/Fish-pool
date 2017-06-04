@@ -68,7 +68,7 @@ app.post('/signup', function(req, res){
       res.sendStatus(200);
     }else{
       console.log(err);
-      res.sendStatus(401);
+      res.sendStatus(500);
     }
   });
   
@@ -138,11 +138,68 @@ app.post('/signup/select', function(req, res){
   
 });
 
+app.post('/signup/match_complete', function(req, res){
+  const matchedUID = req.body['matched'];
+  const gender = req.body['gender'];
+  const date = req.body['date'];
+
+  var boyid = matchedUID;
+  var girlid = matchedUID;
+
+  if(gender == 'female'){
+    girlid = req.session.uid;
+  }else{
+    boyid = req.session.uid;
+  }
+        
+  create.addMatch(boyid, girlid, date, function(err, result){
+    if (!err) {
+      res.sendStatus(200);
+    }else{
+      console.log(err);
+      res.sendStatus(500);
+    }
+  });
+});
 
 
+// Reserve for manual matching
+/*
 app.post('/signup/manual_match', function(req, res){
   const username = req.body['username'];
+  const gender = req.body['gender'];
+  const date = req.body['date'];
+
+  query.queryUIDwithUname(username, function(err, result){
+    if(!err){
+      if (result.rows[0] == undefined) {
+        // if the user isn't exist return false
+        res.sendStatus(401);
+      }else{
+        var boyid = result.rows[0].uid;
+        var girlid = result.rows[0].uid;
+
+        if(gender == 'female'){
+          girlid = req.session.uid;
+        }else{
+          boyid = req.session.uid;
+        }
+        /*
+        create.addMatch(boyid, girlid, date, function(err, result){
+          if (!err) {
+            res.sendStatus(200);
+          }else{
+            console.log(err);
+            res.sendStatus(500);
+          }
+        });
+      }
+    }
+  });
+
 });
+*/
+
 
 /**
  * Verify the login session.
