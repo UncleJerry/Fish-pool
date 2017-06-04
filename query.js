@@ -1,5 +1,15 @@
 var pg = require('pg');
 
+
+const config = {
+  user: 'fishproj',
+  database: 'FishProject',
+  password: '9NG3k37cyaX3', 
+  port: 5432, 
+  max: 10, 
+  idleTimeoutMillis: 1000
+};
+
 /**
  * query the user's hashed password and salt, then return for callback in object result
  * using the node-postgres as the PostgreSQL client
@@ -10,16 +20,6 @@ var pg = require('pg');
  */
 function queryInfo(username, callback) {
 
-  const config = {
-    //user: '',
-    //database: '',
-    //password: '',
-    //host: 'localhost',
-    //port: 5432,
-    //max: 10,
-    //idleTimeoutMillis: 1000,
-  };
-
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
     if(err) {
@@ -27,6 +27,29 @@ function queryInfo(username, callback) {
     }
 
     client.query('SELECT hashpass, salt, uid FROM Account WHERE uname = $1', [username], function(err, result){
+      done(err);
+      
+      if(err) {
+        return callback(err, null);
+      }
+
+      return callback(null, result);
+
+      client.end(function (err) {
+        if (err) throw err;
+      });
+    });
+  })
+}
+
+function queryName(uid, callback){
+  var pool = new pg.Pool(config);
+  pool.connect(function(err, client, done){
+    if(err) {
+      return callback(err, null);
+    }
+
+    client.query('SELECT uid, ifirstname, lastname FROM userinfo as info WHERE uid = $1;', [username], function(err, result){
       done(err);
       
       if(err) {
