@@ -2,9 +2,9 @@ var pg = require('pg');
 
 
 const config = {
-  user: 'fishproj',
-  database: 'FishProject',
-  password: '9NG3k37cyaX3', 
+  user: '',
+  database: '',
+  password: '', 
   port: 5432, 
   max: 10, 
   idleTimeoutMillis: 1000
