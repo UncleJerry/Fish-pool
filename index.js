@@ -34,7 +34,9 @@ app.post('/login', function (req, res){
 
       if (result.rows[0] == undefined) {
         // if the user isn't exist return false
-        res.sendStatus(401);
+        res.json({
+          status:'failed'
+        });
       }else{
         const hashpass = hash.hashWithSalt(password, result.rows[0].salt);
         if (hashpass.localeCompare(result.rows[0].hashpass) == 0) {
@@ -48,12 +50,14 @@ app.post('/login', function (req, res){
           });
         }else{
           // if the hashed password not match, return false
-          res.sendStatus(401);
+          res.json({
+            status:'failed'
+          });
         }
       }
 
     }else{
-      res.send('Error in server.');
+      res.sendStatus(500);
     }
   });
 
