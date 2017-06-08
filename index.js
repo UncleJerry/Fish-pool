@@ -40,10 +40,9 @@ app.post('/login', function (req, res){
         if (hashpass.localeCompare(result.rows[0].hashpass) == 0) {
           req.session.user = result.rows[0].uid;// To mark the user id to further action.
           query.downloadProfile(req.session.user, function(err, result){
-            console.log('Alive0');
+            
             if(!err){
-              console.log('Alive1');
-              console.log(result.rows[0]);
+              
               res.json(result.rows[0]);
             }
           });
@@ -222,7 +221,7 @@ app.post('/Add_Notification', function(req, res){
         // error
       }else{
 
-        console.log('Alive1');
+        
         const nid = result.rows[0].notifyid;
 
         if(repeat == '1'){
@@ -232,7 +231,7 @@ app.post('/Add_Notification', function(req, res){
           });
         }
         create.updateNotification(req.session.user, nid, repeat, day, week, month, year, function(err, result){
-          console.log('Alive2');
+          
           res.json({
             status: 'success',
             notifyid: nid
@@ -258,7 +257,9 @@ app.post('/Add_device', function(req, res){
   const deviceid = req.body['deviceid'];
 
   create.addDevice(req.session.user, deviceid, function(err, result){
-    res.sendStatus(200);
+    res.json({
+      status:'registered'
+    });
   });
 });
 /**
