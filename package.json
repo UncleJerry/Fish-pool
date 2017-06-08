@@ -1,7 +1,7 @@
 {
   "name": "fishlogin",
   "version": "1.0.0",
-  "description": "A login system for https://github.com/UncleJerry/Dailylife-with-a-fish",
+  "description": "A backend system for https://github.com/UncleJerry/Dailylife-with-a-fish",
   "main": "index.js",
   "dependencies": {
     "body-parser": "^1.16.1",

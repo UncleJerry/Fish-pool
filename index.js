@@ -1,6 +1,5 @@
 var express = require('express');
 var app = express();
-//var cookieParser = require('cookie-parser'); temporary disable
 var bodyParser = require('body-parser');
 var session = require('express-session');
 const https = require('https');
@@ -9,6 +8,8 @@ const hash = require('./hash');
 const query = require('./query');
 const create = require('./createUser');
 const MatchUser = require('./matchObject').MatchUser;
+const deleteData = require('./delete');
+
 
 app.use(express.static('public'));
 //app.use(cookieParser()); temporary disable
@@ -27,7 +28,7 @@ app.post('/login', function (req, res){
   const username = req.body['username'];
   const password = req.body['password'];
 
-  query.queryInfo(username, function(err, result){
+  query.login(username, function(err, result){
 
     if (!err) {
 
@@ -38,7 +39,14 @@ app.post('/login', function (req, res){
         const hashpass = hash.hashWithSalt(password, result.rows[0].salt);
         if (hashpass.localeCompare(result.rows[0].hashpass) == 0) {
           req.session.user = result.rows[0].uid;// To mark the user id to further action.
-          res.sendStatus(200);
+          query.downloadProfile(req.session.user, function(err, result){
+            console.log('Alive0');
+            if(!err){
+              console.log('Alive1');
+              console.log(result.rows[0]);
+              res.json(result.rows[0]);
+            }
+          });
         }else{
           // if the hashed password not match, return false
           res.sendStatus(401);
@@ -62,15 +70,28 @@ app.post('/signup', function(req, res){
   const username = req.body['username'];
   const password = req.body['password'];
 
-  create.newUser(username, password, function(err, result){
-    if (!err) {
-      req.session.user = result.rows[0].uid;
-      res.sendStatus(200);
-    }else{
-      console.log(err);
-      res.sendStatus(500);
+  query.queryUName(username, function(err, result){
+    if (!err){
+      if(result.rows[0].count == '0'){
+        create.newUser(username, password, function(err, result){
+          if (!err) {
+            req.session.user = result.rows[0].uid;
+            res.json({
+              status: 'success'
+            })
+          }else{
+            console.log(err);
+            res.sendStatus(500);
+          }
+        });
+      }else{
+        res.json({
+          status: 'exist'
+        })
+      }
     }
   });
+  
   
   
 });
@@ -80,9 +101,14 @@ app.post('/signup/userinfo', function(req, res){
   const lastname = req.body['last'];
   const gender = req.body['gender'];
 
-  create.addUserInfo(req.session.uid, firstname, lastname, ,function(err, result){
+  var isFemale = false;
+
+  if(gender == 'female'){
+    isFemale = true;
+  }
+
+  create.addUserInfo(req.session.user, firstname, lastname, isFemale,function(err, result){
     if (!err) {
-      req.session.user = result.rows[0].uid;
       res.sendStatus(200);
     }else{
       console.log(err);
@@ -92,69 +118,67 @@ app.post('/signup/userinfo', function(req, res){
 });
 
 
-app.post('/signup/shake', function(req, res){
-  // Get the latitude and longitude from request.
-  const latitude = req.body['latitude'];
-  const longitude = req.body['longitude'];
 
-  matchQueue.push(new MatchUser(req.session.user, latitude, longitude));
+app.post('/signup/match', function(req, res){
+  // Get the latitude and longitude from request.
+  const targetEmail = req.body['target'];
+  
+  query.queryName(targetEmail, function(err, result){
+      if(!err && result != undefined){
+        const matchedUID = result.rows[0].uid
+        matchQueue.push(new MatchUser(req.session.user, matchedUID));
+        res.json({
+            status: 'matched',
+            uid: matchedUID,
+            firstname: result.rows[0].firstname,
+            lastname: result.rows[0].lastname,
+            isFemale: result.rows[0].female
+        });
+      }else{
+        res.json({
+          status:'no'
+        })
+      }
+
+  });
+  
 });
 
-app.post('/signup/select', function(req, res){
-  // Get the latitude and longitude from request.
-  const latitude = req.body['latitude'];
-  const longitude = req.body['longitude'];
 
-  matchQueue.sort(function(a, b){
-    const aSum = pow(a.latitude, 2) + pow(a.longitude, 2);
-    const bSum = pow(b.latitude, 2) + pow(b.longitude, 2);
-    const compared = pow(latitude, 2) + pow(longitude, 2);
+app.post('/signup/match_check', function(req, res){
+  const matchid = req.body['match'];
 
-    return abs(compared - aSum) > abs(compared - bSum);
+  const item = matchQueue.find(function(element){
+    return element.uid == matchid;
   });
-  if (matchQueue.length <= 1){
-    res.json({
-      status: 'no'
-    });
+  if (item != undefined) {
+    if(item.matchid == req.session.user){
+      res.json({
+        status: 'success'
+      });
+    }else{
+      res.json({
+        status: 'failed'
+      });
+    }
   }else{
-    const matchedUID = matchQueue.find(function(element){
-      return element.uid != req.session.user;
-    }).uid;
-
-    query.matchQueue(matchedUID, function(err, result){
-      if(!err){
-        if (result.rows[0] == undefined) {
-          // if the user isn't exist return false
-          res.sendStatus(401);
-        }else{
-
-          const resJSON = JSON.stringify(result.rows[0]);
-          res.json(resJSON);
-        }
-      }
+    res.json({
+        status: 'failed'
     });
-    
   }
   
+
 });
 
 app.post('/signup/match_complete', function(req, res){
   const matchedUID = req.body['matched'];
-  const gender = req.body['gender'];
   const date = req.body['date'];
-
-  var boyid = matchedUID;
-  var girlid = matchedUID;
-
-  if(gender == 'female'){
-    girlid = req.session.uid;
-  }else{
-    boyid = req.session.uid;
-  }
         
-  create.addMatch(boyid, girlid, date, function(err, result){
+  create.addMatch(req.session.user, matchedUID, date, function(err, result){
     if (!err) {
-      res.sendStatus(200);
+      res.json({
+        status: 'Success'
+      })
     }else{
       console.log(err);
       res.sendStatus(500);
@@ -163,44 +187,80 @@ app.post('/signup/match_complete', function(req, res){
 });
 
 
-// Reserve for manual matching
-/*
-app.post('/signup/manual_match', function(req, res){
-  const username = req.body['username'];
-  const gender = req.body['gender'];
-  const date = req.body['date'];
 
-  query.queryUIDwithUname(username, function(err, result){
+app.get('/Get_Notification', function(req, res){
+  
+  query.queryNotification(req.session.user, function(err, result){
     if(!err){
+      
       if (result.rows[0] == undefined) {
         // if the user isn't exist return false
-        res.sendStatus(401);
-      }else{
-        var boyid = result.rows[0].uid;
-        var girlid = result.rows[0].uid;
 
-        if(gender == 'female'){
-          girlid = req.session.uid;
-        }else{
-          boyid = req.session.uid;
-        }
-        /*
-        create.addMatch(boyid, girlid, date, function(err, result){
-          if (!err) {
-            res.sendStatus(200);
-          }else{
-            console.log(err);
-            res.sendStatus(500);
-          }
-        });
+        res.json(null);
+      }else{
+        res.json(result.rows);
       }
     }
   });
-
 });
-*/
+
+app.post('/Add_Notification', function(req, res){
+  
+  const detail = req.body['detail'];
+  const repeat = req.body['repeat'];
+  const year = req.body['year'];
+  const month = req.body['month'];
+  const day = req.body['day'];
+  const hour = req.body['hour'];
+  const minute = req.body['minute'];
+  const week = req.body['week'];
+
+  create.addNotification(req.session.user, detail, hour, minute, repeat, function(err, result){
+    if(!err){
+      
+      if (result.rows[0] == undefined) {
+        // error
+      }else{
+
+        console.log('Alive1');
+        const nid = result.rows[0].notifyid;
+
+        if(repeat == '1'){
+          res.json({
+            status: 'success',
+            notifyid: nid
+          });
+        }
+        create.updateNotification(req.session.user, nid, repeat, day, week, month, year, function(err, result){
+          console.log('Alive2');
+          res.json({
+            status: 'success',
+            notifyid: nid
+          });
+        });
+      }
+    }else{
+      console.log(err);
+    }
+  });
+});
 
 
+
+app.post('/Delete_Notification', function(req, res){
+  const notifyid = req.body['notifyid'];
+
+  deleteData.deleteNotification(notifyid, req.session.user);
+});
+
+app.post('/Add_device', function(req, res){
+  
+  const deviceid = req.body['deviceid'];
+
+  create.addDevice(req.session.user, deviceid, function(err, result){
+    res.sendStatus(200);
+  });
+});
 /**
  * Verify the login session.
  * If the device never login or the session is expired, redirect to the login page
@@ -213,10 +273,17 @@ app.get('/verify', function (req, res){
   }
 });
 
+app.get('/logout', function(req, res){
+  req.session.destroy();
+  res.json({
+    status: 'Success'
+  })
+});
+
 
 var secureServer = https.createServer({
-    key: fs.readFileSync('../sslkey/privkey2.pem'),
-    cert: fs.readFileSync('../sslkey/cert2.pem')
+    key: fs.readFileSync('../sslkey/privkey.pem'),
+    cert: fs.readFileSync('../sslkey/cert.pem')
 }, app);
 
 secureServer.listen(3223, function(){
