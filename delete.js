@@ -10,7 +10,13 @@ var config = {
 };
 
 
-
+/**
+ * Delete the notification identified by notifyid and uid (author)
+ * uid is for security
+ * @param {String} notifyid 
+ * @param {String} uid 
+ * @param {*} callback 
+ */
 function deleteNotification(notifyid, uid, callback) {
   
   var pool = new pg.Pool(config);

@@ -42,9 +42,9 @@ app.post('/login', function (req, res){
         if (hashpass.localeCompare(result.rows[0].hashpass) == 0) {
           req.session.user = result.rows[0].uid;// To mark the user id to further action.
           query.downloadProfile(req.session.user, function(err, result){
-            
+
             if(!err){
-              
+
               res.json(result.rows[0]);
             }
           });
@@ -94,39 +94,45 @@ app.post('/signup', function(req, res){
       }
     }
   });
-  
-  
-  
+
+
+
 });
 
 app.post('/signup/userinfo', function(req, res){
-  const firstname = req.body['first'];
-  const lastname = req.body['last'];
-  const gender = req.body['gender'];
+  if (req.session && req.session.user) {
+    const firstname = req.body['first'];
+    const lastname = req.body['last'];
+    const gender = req.body['gender'];
 
-  var isFemale = false;
+    var isFemale = false;
 
-  if(gender == 'female'){
-    isFemale = true;
+    if(gender == 'female'){
+      isFemale = true;
+    }
+
+    create.addUserInfo(req.session.user, firstname, lastname, isFemale,function(err, result){
+      if (!err) {
+        res.sendStatus(200);
+      }else{
+        console.log(err);
+        res.sendStatus(401);
+      }
+    });
+  }else{
+    res.redirect(401, '/login');
   }
 
-  create.addUserInfo(req.session.user, firstname, lastname, isFemale,function(err, result){
-    if (!err) {
-      res.sendStatus(200);
-    }else{
-      console.log(err);
-      res.sendStatus(401);
-    }
-  });
 });
 
 
 
 app.post('/signup/match', function(req, res){
-  // Get the latitude and longitude from request.
-  const targetEmail = req.body['target'];
-  
-  query.queryName(targetEmail, function(err, result){
+  if (req.session && req.session.user) {
+    // Get the latitude and longitude from request.
+    const targetEmail = req.body['target'];
+
+    query.queryName(targetEmail, function(err, result){
       if(!err && result != undefined){
         const matchedUID = result.rows[0].uid
         matchQueue.push(new MatchUser(req.session.user, matchedUID));
@@ -143,128 +149,167 @@ app.post('/signup/match', function(req, res){
         })
       }
 
-  });
-  
+    });
+  }else{
+    res.redirect(401, '/login');
+  }
+
+
 });
 
 
 app.post('/signup/match_check', function(req, res){
-  const matchid = req.body['match'];
 
-  const item = matchQueue.find(function(element){
-    return element.uid == matchid;
-  });
-  if (item != undefined) {
-    if(item.matchid == req.session.user){
-      res.json({
-        status: 'success'
-      });
+  if (req.session && req.session.user) {
+    const matchid = req.body['match'];
+
+    const item = matchQueue.find(function(element){
+      return element.uid == matchid;
+    });
+    if (item != undefined) {
+      if(item.matchid == req.session.user){
+        res.json({
+          status: 'success'
+        });
+      }else{
+        res.json({
+          status: 'failed'
+        });
+      }
     }else{
       res.json({
         status: 'failed'
       });
     }
   }else{
-    res.json({
-        status: 'failed'
-    });
+    res.redirect(401, '/login');
   }
-  
+
 
 });
 
 app.post('/signup/match_complete', function(req, res){
-  const matchedUID = req.body['matched'];
-  const date = req.body['date'];
-        
-  create.addMatch(req.session.user, matchedUID, date, function(err, result){
-    if (!err) {
-      res.json({
-        status: 'Success'
-      })
-    }else{
-      console.log(err);
-      res.sendStatus(500);
-    }
-  });
+
+  if (req.session && req.session.user) {
+    const matchedUID = req.body['matched'];
+    const date = req.body['date'];
+
+    create.addMatch(req.session.user, matchedUID, date, function(err, result){
+      if (!err) {
+        res.json({
+          status: 'Success'
+        })
+      }else{
+        console.log(err);
+        res.sendStatus(500);
+      }
+    });
+  }else{
+    res.redirect(401, '/login');
+  }
+
 });
 
 
 
 app.get('/Get_Notification', function(req, res){
-  
-  query.queryNotification(req.session.user, function(err, result){
-    if(!err){
-      
-      if (result.rows[0] == undefined) {
-        // if the user isn't exist return false
+  if (req.session && req.session.user) {
+    query.queryNotification(req.session.user, function(err, result){
+      if(!err){
 
-        res.json(null);
-      }else{
-        res.json(result.rows);
+        if (result.rows[0] == undefined) {
+          // if the user isn't exist return false
+
+          res.json(null);
+        }else{
+          res.json(result.rows);
+        }
       }
-    }
-  });
+    });
+  }else{
+    res.redirect(401, '/login');
+  }
+
 });
 
+
+/**
+ * Add notification record into database
+ * Including time and detail infomation
+ */
 app.post('/Add_Notification', function(req, res){
-  
-  const detail = req.body['detail'];
-  const repeat = req.body['repeat'];
-  const year = req.body['year'];
-  const month = req.body['month'];
-  const day = req.body['day'];
-  const hour = req.body['hour'];
-  const minute = req.body['minute'];
-  const week = req.body['week'];
 
-  create.addNotification(req.session.user, detail, hour, minute, repeat, function(err, result){
-    if(!err){
-      
-      if (result.rows[0] == undefined) {
-        // error
-      }else{
+  if (req.session && req.session.user) {
+    const detail = req.body['detail'];
+    const repeat = req.body['repeat'];
+    const year = req.body['year'];
+    const month = req.body['month'];
+    const day = req.body['day'];
+    const hour = req.body['hour'];
+    const minute = req.body['minute'];
+    const week = req.body['week'];
 
-        
-        const nid = result.rows[0].notifyid;
+    create.addNotification(req.session.user, detail, hour, minute, repeat, function(err, result){
+      if(!err){
 
-        if(repeat == '1'){
-          res.json({
-            status: 'success',
-            notifyid: nid
+        if (result.rows[0] == undefined) {
+          // error
+        }else{
+
+          // Get notifyid from result
+          const nid = result.rows[0].notifyid;
+
+          if(repeat == '1'){
+            // Add success
+            res.json({
+              status: 'success',
+              notifyid: nid
+            });
+          }
+          create.updateNotification(req.session.user, nid, repeat, day, week, month, year, function(err, result){
+            //update repeat related information
+            res.json({
+              status: 'success',
+              notifyid: nid
+            });
           });
         }
-        create.updateNotification(req.session.user, nid, repeat, day, week, month, year, function(err, result){
-          
-          res.json({
-            status: 'success',
-            notifyid: nid
-          });
-        });
+      }else{
+        console.log(err);
       }
-    }else{
-      console.log(err);
-    }
-  });
+    });
+  }else{
+    res.redirect(401, '/login');
+  }
+
 });
 
 
 
 app.post('/Delete_Notification', function(req, res){
-  const notifyid = req.body['notifyid'];
+  if (req.session && req.session.user) {
+    const notifyid = req.body['notifyid'];
 
-  deleteData.deleteNotification(notifyid, req.session.user);
+    deleteData.deleteNotification(notifyid, req.session.user);
+  }else{
+    res.redirect(401, '/login');
+  }
+
 });
 
 app.post('/Add_device', function(req, res){
-  
-  const deviceid = req.body['deviceid'];
+  if (req.session && req.session.user) {
+    const deviceid = req.body['deviceid'];
 
-  create.addDevice(req.session.user, deviceid, function(err, result){
-    res.json({
-      status:'registered'
+    create.addDevice(req.session.user, deviceid, function(err, result){
+      res.json({
+        status:'registered'
+      });
     });
-  });
+  }else{
+    res.redirect(401, '/login');
+  }
+
 });
 /**
  * Verify the login session.

@@ -41,7 +41,11 @@ function login(username, callback) {
     });
   })
 }
-
+/**
+ * Used for Signin and geting the basic infomation
+ * @param {String} uid 
+ * @param {*} callback 
+ */
 function downloadProfile(uid, callback){
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
@@ -64,14 +68,20 @@ function downloadProfile(uid, callback){
     });
   })
 }
-function queryName(uid, callback){
+
+/**
+ * Query username and return its name and gender
+ * @param {String} uname 
+ * @param {*} callback 
+ */
+function queryName(uname, callback){
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
     if(err) {
       return callback(err, null);
     }
 
-    client.query('SELECT u.uid, u.firstname, u.lastname, u.female FROM account as a JOIN userinfo as u ON u.uid = a.uid WHERE a.uname = $1;', [uid], function(err, result){
+    client.query('SELECT u.uid, u.firstname, u.lastname, u.female FROM account as a JOIN userinfo as u ON u.uid = a.uid WHERE a.uname = $1;', [uname], function(err, result){
       done(err);
       
       if(err) {
@@ -86,7 +96,11 @@ function queryName(uid, callback){
     });
   })
 }
-
+/**
+ * Return the user id to send back to session or other use
+ * @param {String} username 
+ * @param {*} callback 
+ */
 function queryUIDwithUname(username, callback){
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
@@ -109,7 +123,11 @@ function queryUIDwithUname(username, callback){
     });
   })
 }
-
+/**
+ * To query all notifications created by this user.
+ * @param {String} uid 
+ * @param {*} callback 
+ */
 function queryNotification(uid, callback){
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
@@ -132,7 +150,11 @@ function queryNotification(uid, callback){
     });
   })
 }
-
+/**
+ * To query the match record of this user
+ * @param {Number} uid 
+ * @param {*} callback 
+ */
 function queryMatch(uid, callback){
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
@@ -155,7 +177,11 @@ function queryMatch(uid, callback){
     });
   })
 }
-
+/**
+ * To Check if there exist the user name
+ * @param {string} uname 
+ * @param {*} callback 
+ */
 function queryUName(uname, callback){
   var pool = new pg.Pool(config);
   pool.connect(function(err, client, done){
